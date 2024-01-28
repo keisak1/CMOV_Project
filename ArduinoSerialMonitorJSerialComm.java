@@ -23,7 +23,9 @@ public class ArduinoSerialMonitorJSerialComm implements WindowListener, ActionLi
     private long standingStartTimeA1 = 0;
 
     private volatile boolean running = true;
-
+    private boolean touchedA0 = false;
+    private boolean touchedA1 = false;
+    
     public static void main(String[] args) {
         ArduinoSerialMonitorJSerialComm monitor = new ArduinoSerialMonitorJSerialComm();
         monitor.initialize();
@@ -106,42 +108,37 @@ public class ArduinoSerialMonitorJSerialComm implements WindowListener, ActionLi
     }
 
     private void processSerialDataPortA0(double distance) {
-        // Process data from A0 (incrementing)
         if (distance < 50 || distance > 70) {
             long currentTime = System.currentTimeMillis();
-            if (currentTime - lastEntryTimeA0 >= DEBOUNCE_TIME_MS) {
-                if (standingStartTimeA0 == 0 || currentTime - standingStartTimeA0 <= STANDING_TIME_THRESHOLD_MS) {
+            if (currentTime - lastTouchTimeA0 >= DEBOUNCE_TIME_MS) {
+                lastTouchTimeA0 = currentTime;
+                if (lastTouchTimeA1 == 0 || lastTouchTimeA0 < lastTouchTimeA1) {
+                    // A0 was touched first or A1 was never touched
                     peopleCounter++;
-                    System.out.println("People counter incremented for A0. Total people: " + peopleCounter);
+                    System.out.println("Person entered. People counter incremented. Total people: " + peopleCounter);
                 }
-                lastEntryTimeA0 = currentTime;
-                standingStartTimeA0 = 0;
-            } else if (standingStartTimeA0 == 0) {
-                standingStartTimeA0 = currentTime;
             }
-        } else {
-            standingStartTimeA0 = 0;
         }
     }
 
     private void processSerialDataPortA1(double distance) {
-        // Process data from A1 (decrementing)
         if (distance < 50 || distance > 70) {
             long currentTime = System.currentTimeMillis();
-            if (currentTime - lastEntryTimeA1 >= DEBOUNCE_TIME_MS) {
-                if (standingStartTimeA1 == 0 || currentTime - standingStartTimeA1 <= STANDING_TIME_THRESHOLD_MS) {
-                    peopleCounter--;
-                    System.out.println("People counter decremented for A1. Total people: " + peopleCounter);
+            if (currentTime - lastTouchTimeA1 >= DEBOUNCE_TIME_MS) {
+                lastTouchTimeA1 = currentTime;
+                if (lastTouchTimeA0 != 0 && lastTouchTimeA1 < lastTouchTimeA0) {
+                    // A1 was touched first
+                    if (peopleCounter > 0) {
+                        peopleCounter--;
+                        System.out.println("Person exited. People counter decremented. Total people: " + peopleCounter);
+                    } else {
+                        System.out.println("Error: Attempt to decrement counter when counter is already zero.");
+                    }
                 }
-                lastEntryTimeA1 = currentTime;
-                standingStartTimeA1 = 0;
-            } else if (standingStartTimeA1 == 0) {
-                standingStartTimeA1 = currentTime;
             }
-        } else {
-            standingStartTimeA1 = 0;
         }
     }
+
 
     public void close() {
         running = false;
