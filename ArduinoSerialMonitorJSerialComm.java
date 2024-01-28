@@ -23,8 +23,8 @@ public class ArduinoSerialMonitorJSerialComm implements WindowListener, ActionLi
     private long standingStartTimeA1 = 0;
 
     private volatile boolean running = true;
-    private boolean touchedA0 = false;
-    private boolean touchedA1 = false;
+    private long lastTouchTimeA0 = 0;
+    private long lastTouchTimeA1 = 0;
     
     public static void main(String[] args) {
         ArduinoSerialMonitorJSerialComm monitor = new ArduinoSerialMonitorJSerialComm();
